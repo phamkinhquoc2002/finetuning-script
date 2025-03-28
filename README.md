@@ -1,6 +1,6 @@
-##FINETUNING SCRIPT GUIDELINE
+# FINETUNING SCRIPT GUIDELINE
 
-Example:
+### Running Command Example:
 
 ```python train.py --model "meta-llama/Llama-3.2-1B" --dataset "FreedomIntelligence/medical-o1-reasoning-SFT" --format "conversational" --trainer "SFT" --distributed-training "Unsloth" --per-device-train-batch-size 1 --gradient-acc-steps 4 --optim "adamw_torch_fused" --learning-rate 2e-4 --num-train-epochs 1 --lr-scheduler-type "cosine" --save-steps 50 --max-completion-length 1024 --max-seq-length 2048 --gradient-checkpointing True --report-to "wandb"```
 
