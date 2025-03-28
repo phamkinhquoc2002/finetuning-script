@@ -41,3 +41,16 @@ python train.py --model "meta-llama/Llama-3.2-1B" --dataset "FreedomIntelligence
 ```--gradient-checkpointing: Set to True to prevent O-O-M (Out of memory).```
 
 ```--report-to: Set to wandb (You should create a Wandb account) to track the model performance!```
+
+## **Training Methods Option** 
+### SFT
+- Can be used to train every types of data, except for preference. It will help the model learn better but you need high-quality data.
+### DPO
+- Best to use when you want to train tasks that need human alignment like summarization or conversational chatbot.
+- The hardest to setup cause you need both chosen and rejected responses (good and bad responses). Because of that, it is the most costly method. You can only use the preference data format to train the model.
+### GRPO
+- Often used if you want a structured output like <citation></citation> or <think></think>. To train this, you just need a set of prompts and a reward function that defines how the model is gonna learn.
+
+
+
+
