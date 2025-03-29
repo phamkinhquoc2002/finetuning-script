@@ -24,7 +24,7 @@ python train.py --model "meta-llama/Llama-3.2-1B" --dataset "FreedomIntelligence
 
 ```--gradient-acc-steps: Gradient accumulation step.```
 
-```--optim: Keep it adamw_torch_fused for.```
+```--optim: Keep it adamw_torch_fused for simplicity.```
 
 ```--learning-rate: Learning rate of the model. Set to 2e-4 for simplicity.```
 
