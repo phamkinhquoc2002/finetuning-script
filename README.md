@@ -14,9 +14,9 @@ python train.py --model "meta-llama/Llama-3.2-1B" --dataset "FreedomIntelligence
 
 ```--dataset: the link to the dataset. It could be from huggingface, local directory in the format of json or csv.```
 
-```--format: choose the format for the dataset. It could be standard, conversational, preference. More info can be found:https://huggingface.co/docs/trl/en/dataset_formats#formats``` * will be explained below
+```--format: choose the format for the dataset. It could be standard, conversational, preference. More info can be found:https://huggingface.co/docs/trl/en/dataset_formats#formats``` ****
 
-```--trainer: SFT, GRPO, DPO.```* will be explained below
+```--trainer: SFT, GRPO, DPO.```****
 
 ```--distributed-training: Always default to unsloth since it is the fastest.```
 
