@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 from typing_extensions import TypedDict
 from rich.console import Console
 from rich.panel import Panel

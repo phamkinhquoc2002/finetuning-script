@@ -1,5 +1,6 @@
 import argparse
 import os
+import unsloth
 from utils.trainers import gpu_compability_check, login, unpack_training_configuration, model_pack, last_checkpoint, trainer_setup
 from utils.reward_functions import citation_reward_function
 from dataloader.dataloaders import CSVDataLoader, JSONDataLoader, HuggingFaceDataLoader
