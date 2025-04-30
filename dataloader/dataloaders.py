@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Union
-from utils.logger import log_message
-from utils.trainers import conversation_format, standard_format, preference_format
+from src.logger import log_message
+from src.trainers import conversation_format, standard_format, preference_format
 from datasets import Dataset, load_dataset
 from prompts import system_prompt
 
@@ -43,6 +43,12 @@ class CSVDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset('csv', data_files=self.path, split='train')
+            log_message(
+                {
+                    "type": "INFO", 
+                    "text": f"Final Dataset:\n{dataset}"
+                    }
+                )
         except Exception as e:
             log_message(
                 {
@@ -71,6 +77,12 @@ class JSONDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset('json', data_files=self.path, split='train')
+            log_message(
+                {
+                    "type": "INFO", 
+                    "text": f"Final Dataset:\n{dataset}"
+                    }
+                )
         except Exception as e:
             log_message(
                 {
@@ -94,6 +106,12 @@ class HuggingFaceDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset(self.path, split='train')
+            log_message(
+                {
+                    "type": "INFO", 
+                    "text": f"Final Dataset:\n{dataset}"
+                    }
+                )
         except Exception as e:
             log_message({"type": "ERROR", "text": f"Failed to load dataset from Hugging Face: {e}"})
             return None

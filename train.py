@@ -1,123 +1,83 @@
-import argparse
 import os
-import unsloth
-from utils.trainers import gpu_compability_check, login, unpack_training_configuration, model_pack, last_checkpoint, trainer_setup
-from utils.reward_functions import citation_reward_function
+import hydra
+from pydantic import ValidationError
+from src.trainers import unpack_training_configuration, model_pack, last_checkpoint, trainer_setup
+from src.reward_functions import citation_reward_function
+from src.utils import gpu_compability_check, login
+from src.config_models import TrainingConfig, DataConfig
 from dataloader.dataloaders import CSVDataLoader, JSONDataLoader, HuggingFaceDataLoader
 
-def parse_arguments() -> argparse.Namespace:
-    """
-    Parse command line arguments for the Large Language Model training script.
-    
-    Returns:
-        argparse.Namespace: Parsed command line arguments
-    """
-    parser = argparse.ArgumentParser(
-        description="Large language Model Training Script"
-        )
-    parser.add_argument("--model", 
-                        type=str, 
-                        help="Model Name")
-    parser.add_argument("--dataset", 
-                        type=str, 
-                        help="The path link to where the dataset locates")
-    parser.add_argument("--format", 
-                        type=str, 
-                        choices=["conversational", "standard", "preference", "no"],
-                        default="no",
-                        help="Dataset Format Function if needed")
-    parser.add_argument("--trainer", 
-                        type=str, 
-                        choices=["SFT", "GRPO", "DPO"],
-                        default="SFT",
-                        help="Type of Trainers: GRPO, SFT, DPO")
-    parser.add_argument("--distributed-training", 
-                        type=str, 
-                        choices=["DDP", "FSDP", "Unsloth"],
-                        default="DDP",
-                        help="Distributed Training Methods: DDP, FSDP")
-    parser.add_argument("--per-device-train-batch-size",
-                        type=int,
-                        default=1,
-                        help="Batch size per device")
-    parser.add_argument("--gradient-acc-steps",
-                        type=int,
-                        default=4,
-                        help="Gradient accumulation steps!")
-    parser.add_argument("--optim",
-                        type=str, 
-                        default="adamw_torch_fused",
-                        help="Optimizer Methods!")
-    parser.add_argument("--learning-rate",
-                        type=float,
-                        default=5e-5,
-                        help="The training learning rate")
-    parser.add_argument("--num-train-epochs",
-                        type=int,
-                        default=2,
-                        help="The total number of epochs")
-    parser.add_argument("--lr-scheduler-type",
-                        type=str,
-                        default="cosine",
-                        help="lr schedule function")  
-    parser.add_argument("--save-steps",
-                        type=int,
-                        default=100,
-                        help="The number of steps to save a checkpoint")
-    parser.add_argument("--max-completion-length",
-                        type=int,
-                        default=2048,
-                        help="Total number of completion tokens")
-    parser.add_argument("--max-seq-length",
-                        type=int,
-                        default=2048,
-                        help="Total number of sequence tokens")
-    parser.add_argument("--gradient-checkpointing",
-                        type=bool,
-                        default=True,
-                        help="Gradient Checkpointing")
-    parser.add_argument("--report-to",
-                        type=str,
-                        default="wandb",
-                        help="Visualize training step")
-
-    return parser.parse_args()
-
-if __name__ == '__main__':
+@hydra.main(config_path="./configs", config_name="config")
+def main(cfg):
     login()
     gpu_compability_check()
-    args = parse_arguments()
-
+    try: 
+        training_config = TrainingConfig(
+            model = cfg.training_configs.model,
+            trainer=cfg.training_configs.trainer,
+            distributed_training=cfg.training_configs.distributed_training,
+            per_device_train_batch_size=cfg.training_config.per_device_train_batch_size,
+            gradient_acc_steps= cfg.training_config.gradient_acc_steps,
+            optim= cfg.training_config.optim,
+            learning_rate= cfg.training_config.learning_rate,
+            num_train_epochs= cfg.training_config.num_train_epochs,
+            lr_scheduler_type= cfg.training_config.lr_scheduler_type,
+            save_steps= cfg.training_config.save_steps,
+            max_completion_length= cfg.training_config.max_completion_length,
+            max_seq_length= cfg.training_config.max_seq_length,
+            gradient_checkpointing= cfg.training_config.gradient_checkpointing,
+            report_to= cfg.training_config.report_to,
+            )
+        
+        data_config = DataConfig(
+            data_path=cfg.data.path,
+            format=cfg.data.format
+        )
+    except ValidationError as e:
+        raise e
+    
     training_args = unpack_training_configuration(
-        config_class=args.trainer,
-        args=args
+        config_class=training_config.trainer,
+        trainingConfig=training_config
     )
 
-    model, tokenizer = model_pack(args=args)
+    model, tokenizer = model_pack(training_config=training_config)
 
-    if os.path.exists(args.dataset):
-        if args.dataset.endswith('.csv'):
-            dataset_loader = CSVDataLoader(path=args.dataset,
-                                    format=args.format)
+    if os.path.exists(data_config.path):
+        if data_config.path.endswith('.csv'):
+            dataset_loader = CSVDataLoader(path=data_config.path,
+                                    format=data_config.format)
             dataset = dataset_loader.load()
-        elif args.dataset.endswith('.json'):
-            dataset_loader = JSONDataLoader(path=args.dataset,
-                                            format=args.format)
+        elif data_config.dataset.endswith('.json'):
+            dataset_loader = JSONDataLoader(path=data_config.path,
+                                            format=data_config.format)
             dataset = dataset_loader.load()
-    elif not os.path.exists(args.dataset):
-        dataset_loader = HuggingFaceDataLoader(path=args.dataset, 
-                                               format=args.format)
+    elif not os.path.exists(data_config.dataset):
+        dataset_loader = HuggingFaceDataLoader(path=data_config.path, 
+                                               format=data_config.format)
         dataset=dataset_loader.load()
     
-    if args.trainer == 'GRPO':
+    if training_config.trainer == 'GRPO':
         funcs = [citation_reward_function]
     else:
         funcs = None
+
     trainer = trainer_setup(model=model,
                             tokenizer=tokenizer,
                             dataset=dataset,
-                            funcs = None,
+                            funcs = funcs,
                             config=training_args)
     
+    if trainer.accelerator.is_main_process:
+        trainer.model.print_trainable_parameters()
+    
     checkpoint = last_checkpoint(config=training_args)
-    trainer.train(resume_from_checkpoint=last_checkpoint)
+    trainer.train(resume_from_checkpoint=checkpoint)
+
+    if trainer.is_fsdp_enabled:
+        trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
+
+    trainer.model.save_pretrained("./adapters")
+
+if __name__ == "__main__":
+    main()
