@@ -20,9 +20,9 @@ class TrainingConfig(BaseModel):
     gradient_checkpointing: bool = Field(default=True)
     report_to: str = Field(default="tensorboard")
 
-class DataConfig():
+class DataConfig(BaseModel):
     """
     """
-    data_path: str = Field(default="./data")
+    path: str = Field(default="./data")
     format: Literal["no", "conversational", "preference", "standard"]
     

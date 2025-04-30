@@ -1,6 +1,6 @@
 model: ./my_saved_model
 trainer: SFT
-distributed_training: FSDP
+distributed_training: Unsloth
 per_device_train_batch_size: 2
 gradient_acc_steps: 1
 optim: adamw_torch_fused

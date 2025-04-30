@@ -16,7 +16,7 @@ def log_message(log: LogMessage) -> None:
     Log message beautifully.
 
     Parameters:
-        type (LogMessage): Type of Logging.
+        type: Type of Logging.
         text: Logging Message
     """
     console = Console()

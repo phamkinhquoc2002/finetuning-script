@@ -1,9 +1,11 @@
 import os
-from src.configs import TrainingConfig
-from unsloth import FastLanguageModel, is_bfloat16_supported
-from transformers import AutoModelForCausalLM
-from typing import Union, Optional
 from src.logger import log_message
+from src.utils import flatten_conversation
+from src.config_models import TrainingConfig
+from unsloth import FastLanguageModel, is_bfloat16_supported
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from datasets import Dataset
+from typing import Union, Optional
 from transformers.trainer_utils import get_last_checkpoint
 from trl import DPOConfig, SFTConfig, GRPOConfig, DPOTrainer, GRPOTrainer, SFTTrainer
 from peft import LoraConfig, get_peft_model
@@ -29,9 +31,13 @@ def unpack_training_configuration(config_class:Union[type[DPOConfig],
         "lr_scheduler_type": trainingConfig.lr_scheduler_type,
         "num_train_epochs": trainingConfig.num_train_epochs,
         "gradient_checkpointing": trainingConfig.gradient_checkpointing,
-        "report_to": "wandb",
+        "report_to": trainingConfig.report_to,
         "gradient_checkpointing_kwargs": {"use_reentrant": use_reentrant}
     }
+
+    config_class_map = {"SFT": SFTConfig, "DPO": DPOConfig, "GRPO": GRPOConfig}
+    config_class = config_class_map[config_class]
+
     if config_class == DPOConfig or config_class == GRPOConfig:
         if hasattr(trainingConfig, "max_completion_length"):
             common_params["max_completion_length"] = trainingConfig.max_completion_length
@@ -40,7 +46,7 @@ def unpack_training_configuration(config_class:Union[type[DPOConfig],
             "type": "INFO",
             "text": "Note: 'max_completion_length' is not used in SFTConfig and will be ignored"
         })
-        common_params["max_seq_length"] = trainingConfig.max_sequence_length
+        common_params["max_seq_length"] = trainingConfig.max_seq_length
     return config_class(**common_params)
 
     
@@ -102,9 +108,9 @@ def last_checkpoint(config: Union[DPOConfig,
     )
     return last_checkpoint
 
-def trainer_setup(model, 
-          tokenizer,
-          dataset,
+def trainer_setup(model: AutoModelForCausalLM, 
+          tokenizer: AutoTokenizer,
+          dataset: Dataset,
           funcs: Optional[list],
           config: Union[GRPOConfig, 
                         DPOConfig, 
@@ -127,17 +133,25 @@ def trainer_setup(model,
                 train_dataset=dataset
                 )
     elif isinstance(config, SFTConfig):
+
+        dataset=dataset.map(flatten_conversation)
+        log_message(
+            {
+                "type":"INFO",
+                "text": f"Final Dataset format for SFT: {dataset}"
+            }
+        )
         trainer = SFTTrainer(
             model=model,
             processing_class=tokenizer,
-            dataset=dataset,
+            train_dataset=dataset,
             args=config
         )
     elif isinstance(config, DPOConfig):
         trainer = DPOTrainer(
             model=model,
             processing_class=tokenizer,
-            dataset=dataset,
+            train_dataset=dataset,
             args=config
         )
 

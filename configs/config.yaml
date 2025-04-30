@@ -1,4 +1,3 @@
 defaults:
-  - model: default
   - dataset: default
-  - training_configs: default
+  - training_config: default

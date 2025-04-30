@@ -2,11 +2,11 @@ import os
 import torch
 from dotenv import load_dotenv
 from huggingface_hub import login
-from logger import log_message
+from src.logger import log_message
 
-def login():
+def hugging_face_login():
     load_dotenv()
-    HUGGING_FACE_HUB_TOKEN=os.environ('HUGGING_FACE_HUB_TOKEN')
+    HUGGING_FACE_HUB_TOKEN= os.environ['HF_TOKEN']
     try:
         login(
         token=HUGGING_FACE_HUB_TOKEN,
@@ -64,6 +64,17 @@ def preference_format(sample):
 
 def standard_format(sample):
     return {
-        "prompt": [{"role": "user", "content": sample["Question"]}],
-        "completion": [{"role": "assistant", "content": sample["Response"]}],
+        "prompt": [{"role": "user", "content": sample["instruction"]}],
+        "completion": [{"role": "assistant", "content": sample["output"]}],
         }
+
+def flatten_conversation(example):
+    if "messages" in example:
+        messages = example["messages"]
+        convo = ""
+        for m in messages:
+            convo += f"{m['role']}: {m['content']}\n"
+        return {"text": convo.strip()}
+    elif "prompt" in example:
+        convo = f"{example['prompt'][0]['role']}: {example['prompt'][0]['content']}\n{example['completion'][0]['role']}: {example['completion'][0]['content']}"
+        return {"text": convo.strip()}

@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Union
 from src.logger import log_message
-from src.trainers import conversation_format, standard_format, preference_format
+from src.utils import conversation_format, standard_format, preference_format
 from datasets import Dataset, load_dataset
 from prompts import system_prompt
 
@@ -46,7 +46,7 @@ class CSVDataLoader(BaseDataLoader):
             log_message(
                 {
                     "type": "INFO", 
-                    "text": f"Final Dataset:\n{dataset}"
+                    "text": f"Dataset:\n{dataset}"
                     }
                 )
         except Exception as e:
@@ -80,7 +80,7 @@ class JSONDataLoader(BaseDataLoader):
             log_message(
                 {
                     "type": "INFO", 
-                    "text": f"Final Dataset:\n{dataset}"
+                    "text": f"Dataset:\n{dataset}"
                     }
                 )
         except Exception as e:
@@ -109,7 +109,7 @@ class HuggingFaceDataLoader(BaseDataLoader):
             log_message(
                 {
                     "type": "INFO", 
-                    "text": f"Final Dataset:\n{dataset}"
+                    "text": f"Dataset:\n{dataset}"
                     }
                 )
         except Exception as e:
