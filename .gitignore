@@ -7,6 +7,7 @@ __pycache__/
 unsloth_compiled_cache/
 my_saved_model/
 outputs/
+training_checkpoints/
 # C extensions
 *.so
 

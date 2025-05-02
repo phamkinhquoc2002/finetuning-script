@@ -42,7 +42,7 @@
 ### Unsloth
 - Often used if you want a structured output like <citation></citation> or <think></think>. To train this, you just need a set of prompts and a reward function that defines how the model is gonna learn.
 
-#### To enable FSDP and DDP, you need to set up the accelerate config first, learn more about it at: https://huggingface.co/docs/accelerate/usage_guides/fsdp
+#### To enable FSDP and DDP, you need to set up the accelerate config first, learn more about it at: https://huggingface.co/docs/accelerate/usage_guides/fsdp 
 
 
 
