@@ -8,6 +8,10 @@ unsloth_compiled_cache/
 my_saved_model/
 outputs/
 training_checkpoints/
+results/
+data/
+myenv/
+adapters/
 # C extensions
 *.so
 

@@ -1,9 +1,7 @@
 import os
 from src.logger import log_message
-from src.utils import flatten_conversation
 from src.config_models import TrainingConfig
-from unsloth import FastLanguageModel, is_bfloat16_supported
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, DataCollatorForLanguageModeling
 from datasets import Dataset
 from typing import Union, Optional
 from transformers.trainer_utils import get_last_checkpoint
@@ -24,9 +22,9 @@ def unpack_training_configuration(config_class:Union[type[DPOConfig],
         "optim": trainingConfig.optim,
         "save_steps": trainingConfig.save_steps,
         "learning_rate": trainingConfig.learning_rate,
-        "bf16": is_bfloat16_supported(),
-        "fp16": not is_bfloat16_supported(),
-        "logging_steps": 50,
+        "bf16": True,
+        "fp16": False,
+        "logging_steps": 10,
         "warmup_ratio": 0.1,
         "lr_scheduler_type": trainingConfig.lr_scheduler_type,
         "num_train_epochs": trainingConfig.num_train_epochs,
@@ -48,12 +46,13 @@ def unpack_training_configuration(config_class:Union[type[DPOConfig],
         })
         common_params["max_seq_length"] = trainingConfig.max_seq_length
     return config_class(**common_params)
-
     
 def model_pack(
         training_config: TrainingConfig):
     
     if training_config.distributed_training == "Unsloth":
+        from unsloth import FastLanguageModel
+        
         model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=training_config.model,
         max_seq_length=training_config.max_seq_length,
@@ -71,14 +70,14 @@ def model_pack(
         use_gradient_checkpointing="unsloth"
     )
     
-    else:
-        model, tokenizer = AutoModelForCausalLM.from_pretrained(
+    elif training_config.distributed_training == "FSDP" or training_config.distributed_training == "DDP":
+        model = AutoModelForCausalLM.from_pretrained(
             training_config.model,
             torch_dtype="bfloat16",
-            device_map=training_config.distributed_training,
+            device_map=None,
             attn_implementation="flash_attention_2",
         )     
-
+        tokenizer = AutoTokenizer.from_pretrained(training_config.model)
         lora_config = LoraConfig(lora_alpha=64,
                                  lora_dropout=0.05,
                                  r=128,
@@ -88,10 +87,9 @@ def model_pack(
                                  task_type="CAUSAL_LM")
         model = get_peft_model(model=model, peft_config=lora_config)
 
-
     if tokenizer.pad_token is None: 
         tokenizer.pad_token = tokenizer.eos_token
-
+    tokenizer.padding_side  = 'left'
     return model, tokenizer
 
 def last_checkpoint(config: Union[DPOConfig, 
@@ -100,10 +98,10 @@ def last_checkpoint(config: Union[DPOConfig,
     last_checkpoint = None
     if os.path.isdir(config.output_dir):
         last_checkpoint = get_last_checkpoint(config.output_dir)
-    log_message(
+        log_message(
         {
             "type":"INFO",
-            "text":"Checkpoint detected {last_checkpoint}. We will continue at this checkpoint!"
+            "text":f"Checkpoint detected {last_checkpoint}. We will continue at this checkpoint!"
         }
     )
     return last_checkpoint
@@ -133,18 +131,20 @@ def trainer_setup(model: AutoModelForCausalLM,
                 train_dataset=dataset
                 )
     elif isinstance(config, SFTConfig):
-
-        dataset=dataset.map(flatten_conversation)
         log_message(
             {
                 "type":"INFO",
                 "text": f"Final Dataset format for SFT: {dataset}"
             }
         )
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer,
+            mlm=False
+            )
         trainer = SFTTrainer(
             model=model,
-            processing_class=tokenizer,
             train_dataset=dataset,
+            data_collator=data_collator,
             args=config
         )
     elif isinstance(config, DPOConfig):
@@ -154,7 +154,6 @@ def trainer_setup(model: AutoModelForCausalLM,
             train_dataset=dataset,
             args=config
         )
-
     log_message(
         {
             "type":"INFO",

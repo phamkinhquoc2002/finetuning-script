@@ -1,2 +1,2 @@
-path: HyperCluster/ManimatorDataset
-format: standard
+path: ./data/training/brain.csv
+format: simple

@@ -1,0 +1,3 @@
+evaluation_dataset: ./data/evaluation/surgery_eval.csv
+base_model: ./my_saved_model/qwen3-8b
+lora_config: ./adapters/surgery/

@@ -1,15 +1,15 @@
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Any
 from src.logger import log_message
-from src.utils import conversation_format, standard_format, preference_format
+from src.utils import conversation_format, standard_format, preference_format, is_valid_sample
 from datasets import Dataset, load_dataset
-from prompts import system_prompt
 
 class BaseDataLoader():
 
     def __init__(self,
                  path: str,
-                 format: Optional[str]):
+                 format: Optional[str]
+                 ):
         self.path = path
         self.format = format
 
@@ -17,10 +17,10 @@ class BaseDataLoader():
         raise NotImplementedError
 
     def pre_process(self, ) -> Union[callable, str]:
-        if self.format == "no":
-            return "no"
+        if self.format == "simple":
+            return "simple"
         elif self.format == "conversational":
-            return lambda sample: conversation_format(system_prompt, sample)
+            return lambda sample: conversation_format(sample)
         elif self.format == "standard":
             return lambda sample: standard_format(sample)
         elif self.format == "preference":
@@ -43,6 +43,7 @@ class CSVDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset('csv', data_files=self.path, split='train')
+            dataset = dataset.filter(is_valid_sample, load_from_cache_file=False)
             log_message(
                 {
                     "type": "INFO", 
@@ -58,9 +59,9 @@ class CSVDataLoader(BaseDataLoader):
                 )
             raise
         pre_processing = self.pre_process()
-        if pre_processing == "no":
+        if pre_processing == "simple":
             return dataset
-        return dataset.map(pre_processing, remove_columns=dataset.column_names)
+        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
     
 class JSONDataLoader(BaseDataLoader):
 
@@ -77,6 +78,7 @@ class JSONDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset('json', data_files=self.path, split='train')
+            dataset = dataset.filter(is_valid_sample, load_from_cache_file=False)
             log_message(
                 {
                     "type": "INFO", 
@@ -93,10 +95,10 @@ class JSONDataLoader(BaseDataLoader):
             return None
 
         pre_processing = self.pre_process()
-        if not pre_processing:
+        if pre_processing == "simple":
             return dataset
-
-        return dataset.map(pre_processing, remove_columns=dataset.column_names)
+        datset = dataset.filter(is_valid_sample, load_from_cache_file=False)
+        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
 
 class HuggingFaceDataLoader(BaseDataLoader):
 
@@ -106,6 +108,7 @@ class HuggingFaceDataLoader(BaseDataLoader):
     def load(self) -> Optional[Dataset]:
         try:
             dataset = load_dataset(self.path, split='train')
+            dataset = dataset.filter(is_valid_sample, load_from_cache_file=False)
             log_message(
                 {
                     "type": "INFO", 
@@ -117,7 +120,7 @@ class HuggingFaceDataLoader(BaseDataLoader):
             return None
 
         pre_processing = self.pre_process()
-        if not pre_processing:
+        if pre_processing == "simple":
             return dataset
-
-        return dataset.map(pre_processing, remove_columns=dataset.column_names)
+        datset = dataset.filter(is_valid_sample, load_from_cache_file=False)
+        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)

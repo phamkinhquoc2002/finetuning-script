@@ -24,5 +24,5 @@ class DataConfig(BaseModel):
     """
     """
     path: str = Field(default="./data")
-    format: Literal["no", "conversational", "preference", "standard"]
+    format: Literal["simple", "conversational", "preference", "standard"]
     
