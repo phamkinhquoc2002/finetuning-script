@@ -7,26 +7,16 @@ from rich.text import Text
 
 @dataclass
 class LogMessage(TypedDict):
-    """LogMessage class."""
-    type: Literal['ERROR', 'OUTPUT_MESSAGE', 'INFO']
+    type: Literal['ERROR', 'INFO']
     text: str
 
 def log_message(log: LogMessage) -> None:
-    """
-    Log message beautifully.
-
-    Parameters:
-        type: Type of Logging.
-        text: Logging Message
-    """
     console = Console()
     formatted_text = Text()
 
     formatted_text.append(log['text'], style="white")
     if log["type"]== 'ERROR':
         border_style = 'red'
-    elif log["type"] == 'OUTPUT_MESSAGE':
-        border_style = 'green'
     elif log["type"] == 'INFO':
         border_style = 'yellow'
     console.print(Panel(formatted_text, title=log["type"], 

@@ -1,16 +1,17 @@
 import os
 import hydra
 from omegaconf import OmegaConf
-from prompts import summarization_prompt
+from prompts import training_prompt
 from pydantic import ValidationError
 from src.trainers import unpack_training_configuration, model_pack, last_checkpoint, trainer_setup
 from src.reward_functions import citation_reward_function
-from src.utils import gpu_compability_check
+from src.utils import gpu_compability_check, hugging_face_login
 from src.config_models import TrainingConfig, DataConfig
 from dataloader.dataloaders import CSVDataLoader, JSONDataLoader, HuggingFaceDataLoader
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="config")
 def main(cfg):
+    hugging_face_login()
     gpu_compability_check()
     print(OmegaConf.to_yaml(cfg))
     try: 
@@ -65,7 +66,7 @@ def main(cfg):
             for question, response in zip(inputs, outputs):
                 if not response.endswith(EOS):
                     response += EOS
-                text = summarization_prompt.format(question, response)
+                text = training_prompt.format(question, response)
                 texts.append(text)
             return {"text": texts}
         dataset = dataset.map(formatting_prompts_func, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
@@ -90,7 +91,7 @@ def main(cfg):
     trainer.train(resume_from_checkpoint=checkpoint)
     if trainer.is_fsdp_enabled:
         trainer.accelerator.state.fsdp_plugin.set_state_dict_type("FULL_STATE_DICT")
-    trainer.model.save_pretrained("./adapters/brain/")
+    trainer.model.save_pretrained("./adapters")
 
 if __name__ == "__main__":
     main()

@@ -2,3 +2,4 @@ defaults:
   - dataset: default
   - training: default
   - evaluation: default
+  - model: default

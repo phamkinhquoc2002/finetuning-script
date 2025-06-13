@@ -2,9 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Literal
 
 class TrainingConfig(BaseModel):
-    """
-
-    """
     model: str = Field(default="./my_saved_model")
     trainer: Literal["SFT", "DPO", "GRPO"]
     distributed_training: Literal["DDP", "FSDP", "Unsloth"]
@@ -21,8 +18,5 @@ class TrainingConfig(BaseModel):
     report_to: str = Field(default="tensorboard")
 
 class DataConfig(BaseModel):
-    """
-    """
     path: str = Field(default="./data")
     format: Literal["simple", "conversational", "preference", "standard"]
-    

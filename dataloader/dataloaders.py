@@ -61,7 +61,7 @@ class CSVDataLoader(BaseDataLoader):
         pre_processing = self.pre_process()
         if pre_processing == "simple":
             return dataset
-        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
+        return dataset.map(pre_processing, remove_columns=dataset.column_names, load_from_cache_file=False)
     
 class JSONDataLoader(BaseDataLoader):
 
@@ -97,8 +97,8 @@ class JSONDataLoader(BaseDataLoader):
         pre_processing = self.pre_process()
         if pre_processing == "simple":
             return dataset
-        datset = dataset.filter(is_valid_sample, load_from_cache_file=False)
-        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
+        dataset = dataset.filter(is_valid_sample, load_from_cache_file=False)
+        return dataset.map(pre_processing, remove_columns=dataset.column_names, load_from_cache_file=False)
 
 class HuggingFaceDataLoader(BaseDataLoader):
 
@@ -122,5 +122,5 @@ class HuggingFaceDataLoader(BaseDataLoader):
         pre_processing = self.pre_process()
         if pre_processing == "simple":
             return dataset
-        datset = dataset.filter(is_valid_sample, load_from_cache_file=False)
-        return dataset.map(pre_processing, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
+        dataset = dataset.filter(is_valid_sample, load_from_cache_file=False)
+        return dataset.map(pre_processing, remove_columns=dataset.column_names, load_from_cache_file=False)

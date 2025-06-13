@@ -5,10 +5,12 @@ from prompts import test_prompt
 
 def set_up(base_model_name, lora_config):
     tokenizer = AutoTokenizer.from_pretrained(base_model_name)
-    base_model = AutoModelForCausalLM.from_pretrained(base_model, torch_dtype="auto", device_map="auto", attn_implementation="flash_attention_2")
+    base_model = AutoModelForCausalLM.from_pretrained(base_model, 
+                                                      torch_dtype="auto", 
+                                                      device_map="auto", 
+                                                      attn_implementation="flash_attention_2")
     lora_model = PeftModel.from_pretrained(base_model, lora_config)
-    return tokenizer, base_model, lora_model
-
+    return tokenizer, lora_model
 
 def messages_initialize(input):
     messages = [
@@ -30,7 +32,7 @@ def answer_generate(tokenizer, model, text):
 def main(cfg):
     import pandas as pd
     df_test = pd.read_csv(cfg.evaluation.evaluation_dataset)
-    tokenizer, model, lora_model = set_up(cfg.evaluation.base_model, cfg.evaluation.lora_config)
+    tokenizer, lora_model = set_up(cfg.evaluation.base_model, cfg.evaluation.lora_config)
     answers = {"Answer": []}
     for _, row in df_test.iterrows():
         input = row["Question"]
@@ -41,11 +43,11 @@ def main(cfg):
             add_generation_prompt=True,
             enable_thinking=False
             )
-        answer = answer_generate(tokenizer, model, tokenized)
+        answer = answer_generate(tokenizer, lora_model, tokenized)
         answers["Answer"].append(answer)
         print("The summarization of the medical record: {}".format(answer))
     eval_df = pd.DataFrame(answers)
-    eval_df.to_csv("base_model_{}_eval_results.csv".format("surgery"),index=False)
+    eval_df.to_csv(cfg.evaluation.results_dataset,index=False)
 
 if __name__=="__main__":
     main()

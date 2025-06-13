@@ -1,4 +1,4 @@
-evaluation_dataset: ./evaluation/evals.csv
-results_dataset: ./results/result.csv
-base_model: ./my_saved_model/qwen3-8b
-lora_config: ./adapters/SFT/
+evaluation_dataset: 
+results_dataset: 
+base_model: 
+lora_config: 
