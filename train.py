@@ -69,7 +69,7 @@ def main(cfg):
                 text = training_prompt.format(question, response)
                 texts.append(text)
             return {"text": texts}
-        dataset = dataset.map(formatting_prompts_func, batched=True, remove_columns=dataset.column_names, load_from_cache_file=False)
+        dataset = dataset.map(formatting_prompts_func, remove_columns=dataset.column_names, load_from_cache_file=False)
 
     if training_config.trainer == 'GRPO':
         funcs = [citation_reward_function]
