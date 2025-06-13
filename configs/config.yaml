@@ -1,4 +1,4 @@
 defaults:
-  - dataset: default
+  - dataset_config: default
   - training_config: default
-  - evaluation: default
+  - evaluation_config: default
